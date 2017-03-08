@@ -1,0 +1,55 @@
+<project name="lcSearch" default="dist" basedir=".">
+<!-- set global properties for this build -->
+<property name="src" value="gov"/>
+<property name="build" value="build"/>
+<property name="dist" value="dist"/>
+<property name="rules" value="${build}/rule"/>
+<property environment="env"/>
+<property name="java_libs" value="/home/jepowell/dev/java/lib"/>
+<property name="config.dir" value="${basedir}/config"/>
+<property name="ant.build.javac.target" value="1.7"/>
+<property name="ant.build.javac.source" value="1.7"/>
+
+<target name="init">
+<!-- Create the time stamp -->
+<tstamp/>
+
+<!--
+ Create the build directory structure used by compile
+-->
+<mkdir dir="${build}"/>
+</target>
+
+<target name="compile" depends="init">
+<!-- Compile the java code from ${src} into ${build} -->
+
+<javac srcdir="${src}" destdir="${build}">
+  <!-- ${env.CLASSPATH}:${java_libs}/commons-logging.jar:${java_libs}/commons-httpclient-3.0.1.jar"/ -->
+  <classpath path="${env.CLASSPATH}:${java_libs}/commons-httpclient-3.0.1.jar"/>
+</javac>
+</target>
+
+<target name="dist" depends="compile">
+<!-- Create the ${dist}/lib directory -->
+<mkdir dir="${dist}/lib"/>
+
+<jar jarfile="${dist}/WEB-INF/lib/lcSearch.jar" basedir="${build}" includes="**/*.class"/>
+
+<copy todir="${dist}/WEB-INF/classes">
+  <fileset dir="${build}"/>
+  <fileset dir="${config.dir}"/>
+</copy>
+
+<delete file="${dist}/lcSearch.war"/>
+
+<jar jarfile="${dist}/lcSearch.war" basedir="${dist}" includes="**/*"/>
+
+</target>
+
+<target name="clean">
+<!-- Delete the ${build} and ${dist} directory trees -->
+<delete dir="${build}"/>
+<!-- delete dir="${dist}"/ -->
+</target>
+</project>
+

@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Strategic Intelligence LANL Graph</title>
+    <script src="/lcSearch/static/scripts/js/d3/d3.v3.min.js"></script>
+    <script src="/lcSearch/static/scripts/js/jquery/jquery-1.9.0.min.js"></script>
+    <script src="/lcSearch/lib/Vertex.js"></script>
+    <script src="/lcSearch/lib/sankey.js"></script>
+    <script src="/lcSearch/d3Sankey.js"></script>
+ 
+
+   <link rel="stylesheet" href="/lcSearch/static/css/widget.css" />
+
+    <style type="text/css">
+      .nodes text {
+            pointer-events: none;
+            font: 10px sans-serif;
+        }
+    </style>
+<style>
+.node rect {
+  cursor: move;
+  fill-opacity: .9;
+  shape-rendering: crispEdges;
+}
+
+.node text {
+  pointer-events: none;
+  text-shadow: 0 1px 0 #fff;
+}
+
+.link {
+  fill: none;
+  stroke: #000;
+  stroke-opacity: .2;
+}
+
+.link:hover {
+  stroke-opacity: .5;
+}
+
+</style>
+    <script type="text/javascript">
+
+    $.urlParam = function(name) {
+            var res = window.location.search.split('&')
+    
+            for( r in res ) {
+                t = res[r].split('=')
+                if( t[0].search(name) >= 0 ) {
+                    return t[1]
+                }
+            }
+            return 0
+    }
+
+    function getNetwork( ) {
+        // ids = $.urlParam('ids');
+        var retType = $.urlParam('return')
+        var params = window.location.search
+        var paramSet = params.split('?') 
+        if (params.indexOf("ids")<0) { 
+          $("#results").replaceWith('<div id="results">No Results - did you select any items?</div>');
+          return 
+        }
+        var ids = paramSet[1]
+
+        // alert(ids);
+
+        jQuery.ajax ({
+          // url: GRAPHBASEURI,
+          url: "/lcSearch/lcgetids",
+          type: "POST",
+          data: ids,
+          success: function(jsonData){
+
+            if ( jsonData === undefined ) {
+              $("#results").replaceWith('<div id="results">No Results</div>');
+              return
+            }
+
+        if ((retType=="report") || (retType=="tagcloud")) {
+
+            var graphNodes = new Array();
+            var graphEdges = new Array();
+            var nodeHash = new Array();
+            var nodes = new Array();
+            var orgs = new Array();
+            var graph = jsonData.Graph;
+            var nodeFrequency = new Array();
+            var orgNodeFrequency = new Array();
+
+            for (index in graph.Nodes) {
+               uri = graph.Nodes[index].Node[0];
+               label = graph.Nodes[index].Node[1];
+               nodes[uri]=label;
+               orgs[uri]=graph.Nodes[index].Node[2];
+               orgNodeFrequency[uri]=orgNodeFrequency[uri]+1;
+            }
+
+            $("#results").replaceWith('<div id="results"></div>');
+
+            count = 0;
+            for (index in graph.Edges) {
+
+              aHandle = graph.Edges[index].Edge[0]
+              if (!(jQuery.inArray(aHandle, nodeHash)>-1)) {
+                // nodeHash.push(aHandle);
+                nodeHash[count]=aHandle;
+                // nodeFrequency[count]=1;
+                aUri = graph.Edges[index].Edge[0];
+                // aName = graph.Edges[index].Edge[0];
+                aName = nodes[aUri];
+                aVertex = new Vertex(aUri, aName, aHandle, count);
+                graphNodes[count]=aVertex;
+                // alert(aUri + " " + aName + " " + aHandle + " " + count)
+                source = count;
+                count++;
+              } else { source = nodeHash.indexOf(aHandle); 
+                       // nodeFrequency[source]=nodeFrequency[source]+1; 
+                     }
+
+              aHandle2 = graph.Edges[index].Edge[1]
+              if (!(jQuery.inArray(aHandle2, nodeHash)>-1)) {
+                // nodeHash.push(aHandle);
+                nodeHash[count]=aHandle2;
+                nodeFrequency[count]=1;
+                aUri = graph.Edges[index].Edge[1];
+                // aName = graph.Edges[index].Edge[1];
+                aName = nodes[aUri];
+                aVertex = new Vertex(aUri, aName, aHandle2, count);
+                graphNodes[count]=aVertex;
+                // alert(aUri + " " + aName + " " + aHandle + " " + count)
+                target=count;
+                count++;
+              } else { target = nodeHash.indexOf(aHandle2); nodeFrequency[target]=nodeFrequency[target]+1; }
+
+              graphEdges.push({source: source, target: target});
+            }
+
+            var max = 64;
+            var min = 12;
+            var numMaxItems = 1;
+            var maxCount = 1;
+            for (findex in nodeFrequency) {
+              if (nodeFrequency[findex]==maxCount) {
+                numMaxItems++;
+              }
+              if (nodeFrequency[findex]>maxCount) {
+                numMaxItems = 1;
+                maxCount = nodeFrequency[findex];
+              }
+            }
+
+            if (retType=="report") {
+              $("#results").append("\"Identifier\" , \"Title\" , \"Z-number\" , \"Organization\" , \"Name\"<br>");
+              for (edge in graphEdges) {
+                $("#results").append("\"" + nodeHash[graphEdges[edge].source] + "\" , ");
+                $("#results").append("\"" + nodes[nodeHash[graphEdges[edge].source]] + "\" , ");
+                znum = nodeHash[graphEdges[edge].target];
+                znum = znum.replace("http://people.lanl.gov/","");
+                // $("#results").append("\"" + nodeHash[graphEdges[edge].target] + "\" , \"");
+                $("#results").append("\"" + znum + "\" , ");
+                org = orgs[nodeHash[graphEdges[edge].target]];
+                org = org.replace("http://lanl.gov/","");
+                // $("#results").append("\"" + orgs[nodeHash[graphEdges[edge].target]] + "\" , \"");
+                $("#results").append("\"" + org + "\" , ");
+                $("#results").append("\"" + nodes[nodeHash[graphEdges[edge].target]] + "\"<br>");
+              }
+            }
+            if (retType=="tagcloud") {
+              var tagcloud="";
+              var fontSize = 1;
+              for (findex in nodeFrequency) {
+                // fontSize = (Math.log(nodeFrequency.length) / Math.log(numMaxItems)) * (max - min) + min;
+                fontSize = Math.log(nodeFrequency[findex])/Math.log(nodeFrequency.length) * (max - min) + min;
+                // fontSize = (nodeFrequency[findex]/nodeFrequency.length) * (max - min) + min;
+                tagcloud = tagcloud + "<span style=\"font-size:" + fontSize + "px\">";
+                tagcloud = tagcloud + nodes[nodeHash[findex]] + "</span>, ";
+              }
+              // alert(tagcloud);
+              $("#results").append(tagcloud);
+            }
+              
+        }
+ 
+        if (retType=="sankey") {
+              $("#results").replaceWith('<div id="results">done</div>');
+              var someTestData = { "links": [ {"source":"Need","target":"ES-FE: 2008","value":"2.4"},{"source":"ES-FE: 2008","target":"ES-FE: 2009","value":"5.2"}, {"source":"ES-FE: 2009","target":"ES-FE: 2010","value":"2.2"} ] , "nodes": [ {"name":"Need"}, {"name":"ES-FE: 2008"}, {"name":"ES-FE: 2009"}, {"name":"ES-FE: 2010"}] };
+             
+            var graphNodes = new Array();
+            var graphEdges = new Array();
+            var nodeHash = new Array();
+            var nodes = new Array();
+            var graph = jsonData.Graph;
+            var nodeFrequency = new Array();
+            var nodeSupplement = new Array();
+            var orgDate = new Array();
+            var sankeyNodes = new Array();
+            var sankeyEdges = new Array();
+
+            // alert(JSON.stringify(graph));
+
+            for (index in graph.Nodes) {
+               uri = graph.Nodes[index].Node[0];
+               label = graph.Nodes[index].Node[1];
+               supplement = graph.Nodes[index].Node[2];
+               nodes[uri]=label;
+               supplement = supplement.replace("http://people.lanl.gov/", "") 
+               supplement = supplement.replace("http://lanl.gov/", "") 
+               nodeSupplement[uri]=supplement; 
+            }
+
+            for (index in graph.Edges) {
+               org = nodeSupplement[graph.Edges[index].Edge[1]];
+               dateVal = nodeSupplement[graph.Edges[index].Edge[0]].substring(0,4);
+               nodeName = org + ":"+dateVal;
+               if (isNaN(sankeyNodes[nodeName])) {
+                 sankeyNodes[nodeName]=1;
+               } else {
+                 sankeyNodes[nodeName]++;
+               }
+            }
+            var sankeySorted = new Array();
+            // sankeySorted = Object.keys(sankeyNodes);
+            for (index in sankeyNodes) {
+              sankeySorted.push(index);
+            }
+            sankeySorted.sort();
+            // alert(JSON.stringify(sankeySorted));
+
+            sankeyString = '{ "links": ['
+            var last="";
+            for (index in sankeySorted) {
+              orgVals = sankeySorted[index].split(":");
+              if (orgVals[0]==last) { 
+                sankeyString = sankeyString + '{"source":"'+sankeySorted[index-1]+'", "target":"'+sankeySorted[index]+'","value":"'+sankeyNodes[sankeySorted[index]]+'"},'
+              } else {
+                // if (sankeyNodes[sankeySorted[index]]>1) {
+                  sankeyString = sankeyString + '{"source":"Need", "target":"'+sankeySorted[index]+'","value":"'+sankeyNodes[sankeySorted[index]]+'"},'
+                // }
+              }
+              last=orgVals[0];
+            }
+            sankeyString = sankeyString.substring(0, sankeyString.length-1)
+            sankeyString = sankeyString + '], "nodes": ['
+            sankeyString = sankeyString + '{"name":"Need"},'
+            for (index in sankeySorted) {
+              // if (sankeyNodes[sankeySorted[index]]>1) {
+                sankeyString = sankeyString + '{"name":"'+sankeySorted[index]+'"},'
+              // }
+            }
+            sankeyString = sankeyString.substring(0, sankeyString.length-1)
+            sankeyString = sankeyString + '] }'
+            // alert(sankeyString);
+            sankeyData = jQuery.parseJSON(sankeyString);
+
+            // drawSankey(someTestData);
+            drawSankey(sankeyData);
+        }
+
+        if (retType=="network") {
+
+            // Width and height
+            var w = 2000;
+            var h = 2000;
+
+            var graphNodes = new Array();
+            var graphEdges = new Array();
+            var nodeHash = new Array();
+            var nodes = new Array();
+            var graph = jsonData.Graph;
+            var nodeFrequency = new Array();
+
+            for (index in graph.Nodes) {
+               uri = graph.Nodes[index].Node[0];
+               label = graph.Nodes[index].Node[1];
+               nodes[uri]=label;
+            }
+
+            count = 0;
+            for (index in graph.Edges) {
+
+              aHandle = graph.Edges[index].Edge[0]
+              if (!(jQuery.inArray(aHandle, nodeHash)>-1)) {
+                // nodeHash.push(aHandle);
+                nodeHash[count]=aHandle;
+                nodeFrequency[count]=1;
+                aUri = graph.Edges[index].Edge[0];
+                // aName = graph.Edges[index].Edge[0];
+                aName = nodes[aUri];
+                aVertex = new Vertex(aUri, aName, aHandle, count);
+                graphNodes[count]=aVertex;
+                source = count;
+                count++;
+              } else { source = nodeHash.indexOf(aHandle); nodeFrequency[nodeHash.indexOf(aHandle)]++; }
+
+
+              aHandle2 = graph.Edges[index].Edge[1]
+              if (!(jQuery.inArray(aHandle2, nodeHash)>-1)) {
+                // nodeHash.push(aHandle);
+                nodeHash[count]=aHandle2;
+                nodeFrequency[count]=1;
+                aUri = graph.Edges[index].Edge[1];
+                // aName = graph.Edges[index].Edge[1];
+                aName = nodes[aUri];
+                aVertex = new Vertex(aUri, aName, aHandle2, count);
+                graphNodes[count]=aVertex;
+                target=count;
+                count++;
+              } else { target = nodeHash.indexOf(aHandle2); nodeFrequency[nodeHash.indexOf(aHandle)]++; }
+
+
+              graphEdges.push({source: source, target: target});
+            }
+
+            // Initialize a default force layout, using the nodes and edges in dataset
+            var force = d3.layout.force()
+	 	 .nodes(graphNodes)
+		 .links(graphEdges)
+		 .size([w, h])
+		 .linkDistance([75])
+		 .charge([-500])
+		 .start();
+
+	    var colors = d3.scale.category10();
+
+            //Create SVG element
+	    var svg = d3.select("#graphBox")
+		.append("svg")
+		.attr("width", w)
+		.attr("height", h);
+		
+	    //Create edges as lines
+	    var edges = svg.append("g")
+                .selectAll("line")
+		.data(graphEdges)
+		.enter()
+		.append("line")
+		.style("stroke", "#aaa")
+		.style("stroke-width", 1);
+	
+	//Create nodes as circles
+	var nodes = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("circle")
+		.data(graphNodes)
+                .enter()
+                .append("a")
+                .attr("xlink:href", function(d) {
+                   if (d.uri.indexOf("people.lanl.gov")>-1) {
+                     return 'http://proto2.lanl.gov/egoClientJ/concept.html?type=nonplatonic&uri='+encodeURIComponent(d.uri);
+                   } else {
+                     return 'http://boots.lanl.gov:8080/lcSearch/lcrdfresults?return=other&query='+encodeURIComponent(d.uri);
+                   }
+                   // return '../../concept.html?type=nonplatonic&uri='+encodeURIComponent(d.uri);
+                })
+                .attr("target", "new")
+          .attr("transform", function(d, i) {
+             d.x = i * 70 + 50,
+             d.y = h / 2;
+             return "translate(" + d.x + "," + d.y + ")"; 
+           });
+
+        nodes.append("circle")
+                .attr("class", "node")
+                .attr("r", 5)
+                .attr("stroke", "#aaa")
+                .attr("stroke-width", "1")
+                .attr("fill", function(d) { 
+                  if (d.uri.indexOf("people.lanl.gov")>-1) {
+                    return "red" 
+                  } else { 
+                    return "gray" 
+                  }
+                } );
+
+        nodes.append("text")
+                 .attr("text-anchor", "bottom")
+ 	         .attr("x", +20)
+                 .attr("y", 0)
+                 .text(function(d) { return d.label });
+
+        nodes.call(force.drag);
+
+	//Every time the simulation "ticks", this will be called
+	force.on("tick", function() {
+		edges.attr("x1", function(d) { return d.source.x; })
+		 .attr("y1", function(d) { return d.source.y; })
+		 .attr("x2", function(d) { return d.target.x; })
+		 .attr("y2", function(d) { return d.target.y; });
+			
+                nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+        });
+        $("#results").replaceWith('<div id="results">done</div>');
+       }}}); }
+
+function get_random_color() {
+    var letters = '0123456789ABCDEF'.split('');
+    var color = '#';
+    for (var i = 0; i < 6; i++ ) {
+        color += letters[Math.round(Math.random() * 15)];
+    }
+    return color;
+}
+			
+   </script>
+  </head>
+
+  <body onload="getNetwork();">
+  <img src="si_icon.png">
+  <p id="chart"></p>
+
+  <div class="section">
+  <table><tr><td><div id="graphBox"></div></td></tr></table>
+  </div>
+
+  <div id="results"><img src="/lcSearch/static/images/indeterminateProgressSpinner_92x92_blackonwhite.gif"></div>
+
+  </body>
+</html>

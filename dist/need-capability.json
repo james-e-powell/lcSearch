@@ -1,0 +1,39 @@
+{
+"links": [
+{"source":"Need","target":"ES-FE: 2008","value":"1.4"},
+{"source":"ES-FE: 2008","target":"ES-FE: 2009","value":"5.2"},
+{"source":"Need","target":"T-6: 2008","value":"5.4"},
+{"source":"T-6: 2008","target":"T-6: 2009","value":"1.7"},
+{"source":"Need","target":"CCS-3: 2008","value":"1.5"},
+{"source":"CCS-3: 2008","target":"CCS-3: 2009","value":"5.2"},
+{"source":"Need","target":"B-4: 2008","value":"1.7"},
+{"source":"B-4: 2008","target":"B-4: 2009","value":"1.0"},
+{"source":"ES-FE: 2009","target":"ES-FE: 2010","value":"0.2"},
+{"source":"T-6: 2009","target":"T-6: 2010","value":"5.0"},
+{"source":"CCS-3: 2009","target":"CCS-3: 2010","value":"3.4"},
+{"source":"B-4: 2009","target":"B-4: 2010","value":"0.5"},
+{"source":"ES-FE: 2010","target":"ES-FE: 2011","value":"3.5"},
+{"source":"T-6: 2010","target":"T-6: 2011","value":"7.3"},
+{"source":"CCS-3: 2010","target":"CCS-3: 2011","value":"2.5"},
+{"source":"B-4: 2010","target":"B-4: 2011","value":"1.2"}
+] ,
+"nodes": [
+{"name":"Need"},
+{"name":"ES-FE: 2008"},
+{"name":"ES-FE: 2009"},
+{"name":"ES-FE: 2010"},
+{"name":"ES-FE: 2011"},
+{"name":"T-6: 2008"},
+{"name":"T-6: 2009"},
+{"name":"T-6: 2010"},
+{"name":"T-6: 2011"},
+{"name":"CCS-3: 2008"},
+{"name":"CCS-3: 2009"},
+{"name":"CCS-3: 2010"},
+{"name":"CCS-3: 2011"},
+{"name":"B-4: 2008"},
+{"name":"B-4: 2009"},
+{"name":"B-4: 2010"},
+{"name":"B-4: 2011"}
+] }
+

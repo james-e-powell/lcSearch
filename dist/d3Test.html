@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Twitter Graph</title>
+    <script src="../../static/scripts/js/d3/d3.v3.min.js"></script>
+    <script src="../../static/scripts/js/jquery/jquery-1.9.0.min.js"></script>
+    <script src="../../config/config.js"></script>
+    <script src="../../lib/EgoPlatonic.js"></script>
+    <script src="../../lib/Metrics.js"></script>
+
+    <script src="../../lib/Identity.js"></script>
+    <script src="../../lib/Method.js"></script>
+    <script src="../../lib/PathsList.js"></script>
+    <script src="../../lib/Vertex.js"></script>
+
+   <link rel="stylesheet" href="../../static/css/widget.css" />
+
+    <style type="text/css">
+      .nodes text {
+            pointer-events: none;
+            font: 10px sans-serif;
+        }
+    </style>
+    <script type="text/javascript">
+
+    $.urlParam = function(name) {
+            var res = window.location.search.split('&')
+    
+            for( r in res ) {
+                t = res[r].split('=')
+                if( t[0].search(name) >= 0 ) {
+                    return t[1]
+                }
+            }
+            return 0
+    }
+
+    function getPlatonic( ) {
+        query = $.urlParam('uri');
+        service = $.urlParam('service'); // twitter, msacademic, etc
+
+        jsonQuery = {};
+        jsonQuery.uri=query;
+
+        jQuery.ajax ({
+          url: GRAPHBASEURI,
+          type: "POST",
+          data: JSON.stringify(jsonQuery),
+          contentType: "application/json; charset=utf-8",
+          success: function(jsonData){
+
+            if( jsonData === undefined ) {
+              return
+            }
+
+          platonicPerson = new EgoPlatonic(jsonData);
+          // dataset = (platonicPerson.getGraphObj());
+
+          // generate a dataset for d3 force directed graph layout 
+          // this class is a node and all the services are nodes as well
+          // var dataset = {};
+          // dataset.nodes = new Array();
+          // dataset.edges = new Array();
+          // dataset.nodes.push({node: platonicPerson.name});
+          rootNode = null;
+          services = platonicPerson.getServices();
+          count= 0;
+          for (index in services) {
+            if (services[index]==service) {
+              label = services[index]+" : " +jsonData.identities[index].properties.uri;
+              uri = jsonData.identities[index].properties.uri;
+              handle = jsonData.identities[index].properties.handle;
+              // dataset.nodes.push({node: label});
+              rootNode = new Vertex(uri, label, handle, "0");
+
+              jsonQuery = { }
+              jsonQuery.uri = jsonData.identities[index].properties.uri;
+              if (service == "twitter") {
+                jsonQuery.method = 'getFollows';
+              } else {
+                jsonQuery.method = 'getCoauthors';
+              } 
+              jQuery.ajax ({
+                url: METHODBASEURI,
+                type: "POST",
+                data: JSON.stringify(jsonQuery),
+                contentType: "application/json; charset=utf-8",
+                success: function(jsonData){
+
+                  if( jsonData === undefined ) {
+                    return
+                  }
+                  dataset = new PathsList(jsonData);
+                  dataset.setRootNode(rootNode);
+
+            //Width and height
+            var w = 800;
+            var h = 800;
+
+            var graphNodes = new Array();
+            var graphEdges = new Array();
+            graphNodes = dataset.getNodesById();
+            graphEdges = dataset.getPathsById();
+
+            // Initialize a default force layout, using the nodes and edges in dataset
+            var force = d3.layout.force()
+	 	 // .nodes(dataset.nodes)
+	 	 .nodes(graphNodes)
+		 // .links(dataset.edges)
+		 .links(graphEdges)
+		 .size([w, h])
+		 .linkDistance([100])
+		 .charge([-500])
+		 .start();
+
+	    var colors = d3.scale.category10();
+
+            //Create SVG element
+	    var svg = d3.select("#graphBox")
+		.append("svg")
+		.attr("width", w)
+		.attr("height", h);
+		
+	    //Create edges as lines
+	    var edges = svg.append("g")
+                .selectAll("line")
+		.data(graphEdges)
+		.enter()
+		.append("line")
+		.style("stroke", "#aaa")
+		.style("stroke-width", 1);
+	
+	//Create nodes as circles
+	// var node = svg.selectAll(".node")
+	var nodes = svg.append("g")
+                .attr("class", "nodes")
+                .selectAll("circle")
+		.data(graphNodes)
+                .enter()
+		// .append("g")
+                .append("a")
+                .attr("xlink:href", function(d) {return d.node; })
+                .attr("target", "new")
+          .attr("transform", function(d, i) {
+             // Set d.x and d.y here so that other elements can use it. d is 
+             // expected to be an object here.
+             d.x = i * 70 + 50,
+             d.y = h / 2;
+             return "translate(" + d.x + "," + d.y + ")"; 
+           });
+
+        nodes.append("circle")
+                .attr("class", "node")
+                .attr("r", 25)
+                .attr("stroke", "#aaa")
+                .attr("stroke-width", "1")
+                .attr("fill", "#fff");
+                // .on("click", function(d){
+                   // var url = '/egoClientJ/egoPersonFingerprint.html?uri='+d.node;
+                   // var url = d.node;
+                   // alert(url);
+                   // $(location).attr('href', url);
+                   // $(location).attr('target', 'new');
+                   // window.location = url;   
+                // });
+
+                // .style("fill", function(d, i) {
+                //         return colors(i);
+                // });
+
+        nodes.append("image")
+                // .attr("xlink:href", "https://github.com/favicon.ico")
+                // .attr("xlink:href", "http://megalodon.lanl.gov/ego/egoClientJ/static/images/twitter.png")
+                .attr("xlink:href", function(d) {
+                    if (d.node.indexOf("twitter")>-1) { return "../../static/images/twitter.png"; }
+                    if (d.node.indexOf("lanl")>-1) { return "../../static/images/lanl.png"; }
+                    if (d.node.indexOf("linkedin")>-1) { return "../../static/images/linkedin.png"; }
+                    if (d.node.indexOf("msacademic")>-1) { return "../../static/images/msacademic.png"; }
+                    else { return "../../static/images/twitter.png"; }})
+                .attr("x", -15)
+                .attr("y", -15)
+                .attr("width", 30)
+                .attr("height", 30);
+
+        nodes.append("text")
+                 .attr("text-anchor", "bottom")
+                .attr("x", +20)
+                .attr("y", 0)
+                 .text(function(d) { return d.node });
+
+        nodes.call(force.drag);
+
+	//Every time the simulation "ticks", this will be called
+	force.on("tick", function() {
+		edges.attr("x1", function(d) { return d.source.x; })
+		 .attr("y1", function(d) { return d.source.y; })
+		 .attr("x2", function(d) { return d.target.x; })
+		 .attr("y2", function(d) { return d.target.y; });
+			
+	        // nodes.attr("cx", function(d) { return d.x; })
+		//      .attr("cy", function(d) { return d.y; });
+                nodes.attr("transform", function(d) { return "translate(" + d.x + "," + d.y + ")"; });
+        });
+
+}});
+       // .header("Content-Type","application/x-www-form-urlencoded")
+       // .send("POST",jsonQuery);
+
+            }
+      }
+  }});
+
+}
+
+			
+   </script>
+  </head>
+
+  <body onload="getPlatonic();">
+  <div class="widget_title">Twitter Graph</div>
+  <p>
+
+  <div class="section">
+  <table><tr><td><div id="graphBox"></div></td></tr></table>
+  </div>
+
+  </body>
+</html>

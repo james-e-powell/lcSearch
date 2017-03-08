@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+
+<!DOCTYPE web-app 
+    PUBLIC "-//Sun Microsystems, Inc.//DTD Web Application 2.3//EN" 
+        "http://java.sun.com/dtd/web-app_2_3.dtd">
+
+<web-app>
+    <display-name>OpenURL 1.0 resolver</display-name>
+        <description>
+              OpenURL 1.0 resolver
+        </description>
+                  	
+    <servlet>
+      <servlet-name>lcSearch</servlet-name>
+      <servlet-class>gov.lanl.lcSearch.lcSearchServlet</servlet-class>
+    </servlet>
+                        						 
+    <servlet-mapping>
+       <servlet-name>lcSearch</servlet-name> 
+       <url-pattern>/lcsearch/*</url-pattern> 
+    </servlet-mapping>
+
+    <servlet>
+          <servlet-name>lcProfileSearch</servlet-name>
+          <servlet-class>gov.lanl.lcSearch.lcProfileSearchServlet</servlet-class>
+    </servlet>  
+
+    <servlet-mapping>
+          <servlet-name>lcProfileSearch</servlet-name>
+          <url-pattern>/lcprofile/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+       <servlet-name>lcChart</servlet-name>
+       <servlet-class>gov.lanl.lcSearch.lcChartServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+       <servlet-name>lcChart</servlet-name>
+       <url-pattern>/lcchart/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+       <servlet-name>rdfSearch</servlet-name>
+       <servlet-class>gov.lanl.lcSearch.rdfQueryServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+       <servlet-name>rdfSearch</servlet-name>
+       <url-pattern>/lcrdf/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+       <servlet-name>rdfNetwork</servlet-name>
+       <servlet-class>gov.lanl.lcSearch.rdfNetworkServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+       <servlet-name>rdfNetwork</servlet-name>
+       <url-pattern>/lcgetids/*</url-pattern>
+    </servlet-mapping>
+
+    <servlet>
+       <servlet-name>rdfResults</servlet-name>
+       <servlet-class>gov.lanl.lcSearch.rdfResultsServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+       <servlet-name>rdfResults</servlet-name>
+       <url-pattern>/lcrdfresults/*</url-pattern>
+    </servlet-mapping>
+
+</web-app>
