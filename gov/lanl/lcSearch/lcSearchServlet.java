@@ -171,13 +171,16 @@ public class lcSearchServlet extends HttpServlet {
            String resultUri = "http://boots.lanl.gov/si/all/"+resultFilename;
            String resultIdentifier = resultFilename.substring(0, resultFilename.indexOf("."));
            // String docTitle = resolveIdentifier(resultIdentifier);
-           String docTitle = resolveIdentifierSolr(resultIdentifier);
            
            // out.println("<td bgcolor=\"#efefef\"><input type=\"checkbox\" name=\"ids\" value=\""+resultFilename+"\">" + hits[i].score + " : </td><td bgcolor=\"#efefef\"><a href=\""+resultUri+"\">" + resultFilename + "</a></td>");
            out.print("<td bgcolor=\"#efefef\"><input type=\"checkbox\" name=\"ids\" value=\""+resultFilename+"\">&nbsp;");
            out.print(String.format("%1.4f", hits[i].score));
            out.println("</td><td bgcolor=\"#efefef\"><a href=\""+resultUri+"\">" + resultFilename + "</a></td>");
-           out.println("<td bgcolor=\"#efefef\"><a href=\"http://boots.lanl.gov:8080/lcSearch/lcrdfresults?return=other&query=" + resultFilename + "\">" + docTitle + "</a></td></tr>");
+           String recordId = resultFilename.replace(".pdf.txt", "");
+           try {
+             String docTitle = resolveIdentifierSolr(resultIdentifier);
+             out.println("<td bgcolor=\"#efefef\"><a href=\"http://boots.lanl.gov:8080/lcSearch/solrrecord?return=other&query=" + recordId + "\">" + docTitle + "</a></td></tr>");
+           } catch (Exception e) {}
          }
          
          out.println("</form>");
@@ -217,7 +220,7 @@ public class lcSearchServlet extends HttpServlet {
     return retValue;
   }
 
-  public String resolveIdentifierSolr(String identifier) {
+  public static String resolveIdentifierSolr(String identifier) {
     String charset = "UTF-8";
     String retValue = "";
     String solrServerAddr = "http://lastage.lanl.gov:9090/solr/fullrec/select?q=%22info%3Alanl-repo%2Flareport%2F_LAUR_%22&wt=xml&indent=true";

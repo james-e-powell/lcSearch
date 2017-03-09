@@ -70,4 +70,14 @@
        <url-pattern>/lcrdfresults/*</url-pattern>
     </servlet-mapping>
 
+    <servlet>
+       <servlet-name>solrRecord</servlet-name>
+       <servlet-class>gov.lanl.lcSearch.solrRecordServlet</servlet-class>
+    </servlet>
+
+    <servlet-mapping>
+       <servlet-name>solrRecord</servlet-name>
+       <url-pattern>/solrrecord/*</url-pattern>
+    </servlet-mapping>
+
 </web-app>
