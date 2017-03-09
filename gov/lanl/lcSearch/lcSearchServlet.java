@@ -170,7 +170,8 @@ public class lcSearchServlet extends HttpServlet {
            String resultFilename = resultFilePath.substring(resultFilePath.lastIndexOf("/")+1, resultFilePath.length());
            String resultUri = "http://boots.lanl.gov/si/all/"+resultFilename;
            String resultIdentifier = resultFilename.substring(0, resultFilename.indexOf("."));
-           String docTitle = resolveIdentifier(resultIdentifier);
+           // String docTitle = resolveIdentifier(resultIdentifier);
+           String docTitle = resolveIdentifierSolr(resultIdentifier);
            
            // out.println("<td bgcolor=\"#efefef\"><input type=\"checkbox\" name=\"ids\" value=\""+resultFilename+"\">" + hits[i].score + " : </td><td bgcolor=\"#efefef\"><a href=\""+resultUri+"\">" + resultFilename + "</a></td>");
            out.print("<td bgcolor=\"#efefef\"><input type=\"checkbox\" name=\"ids\" value=\""+resultFilename+"\">&nbsp;");
@@ -215,6 +216,29 @@ public class lcSearchServlet extends HttpServlet {
     } catch (Exception e) { System.out.println(e); }
     return retValue;
   }
+
+  public String resolveIdentifierSolr(String identifier) {
+    String charset = "UTF-8";
+    String retValue = "";
+    String solrServerAddr = "http://lastage.lanl.gov:9090/solr/fullrec/select?q=%22info%3Alanl-repo%2Flareport%2F_LAUR_%22&wt=xml&indent=true";
+    try {
+      identifier = identifier.replace("info-lanl-repo_","");
+      String queryUri = solrServerAddr.replace("_LAUR_", identifier);
+      System.out.println(queryUri);
+      // String encodedQuery = java.net.URLEncoder.encode(query, "UTF-8");
+
+      URL url = new URL(queryUri);
+      URLConnection connection = url.openConnection();
+
+      connection.setRequestProperty("Accept-Charset", charset);
+      InputStream response = connection.getInputStream();
+      String results = fromStream(response);
+      int titleStart = results.indexOf("<str name=\"Title\">");
+      retValue = results.substring(titleStart, results.indexOf("</str>", titleStart));
+    } catch (Exception e) { System.out.println(e); }
+    return retValue;
+  }
+
 
   public static String fromStream(InputStream in) throws IOException {
     BufferedReader reader = new BufferedReader(new InputStreamReader(in));
